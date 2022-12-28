@@ -1,4 +1,6 @@
 import numpy as np
+import pytransform3d.rotations as pr
+from pytransform3d.plot_utils import plot_vector
 
 
 def get_rot_x(angle):
@@ -90,3 +92,28 @@ def convert_homog_to_grid(pts, img_size):
     Zt = pts[2, :].reshape(img_size)
 
     return xxt, yyt, Zt
+
+
+def create_same_plane_points(n_points, xlim, ylim, elevation):
+    '''
+    return points lied on the same plane
+    '''
+
+    x = np.linspace(xlim[0], xlim[1], n_points)
+    y = np.linspace(ylim[0], ylim[1], n_points)
+
+    xxs, yys = np.meshgrid(x, y)
+    zzs = elevation * np.ones(shape=(n_points, n_points))
+
+    same_plane_points = np.ones(shape=(3, n_points*n_points))
+    c = 0
+
+    for i in range(n_points):
+        for j in range(n_points):
+            xs = xxs[i, j]
+            ys = yys[i, j]
+            zs = zzs[i, j]
+            same_plane_points[:, c] = np.array([xs, ys, zs])
+            c += 1
+    
+    return same_plane_points
