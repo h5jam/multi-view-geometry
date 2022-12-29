@@ -1,6 +1,5 @@
 import numpy as np
-import pytransform3d.rotations as pr
-from pytransform3d.plot_utils import plot_vector
+# from pytransform3d.plot_utils import plot_vector
 
 
 def get_rot_x(angle):
@@ -117,3 +116,25 @@ def create_same_plane_points(n_points, xlim, ylim, elevation):
             c += 1
     
     return same_plane_points
+
+
+def compute_intrinsic_parameter_matrix(f, s, a, cx, cy):
+    K = np.identity(3)
+    K[0, 0] = f
+    K[0, 1] = s
+    K[0, 2] = cx
+    K[1, 1] = a * f
+    K[1, 2] = cy
+
+    return K    
+
+
+def compute_image_projection(points, K):
+    h_points_i = K @ points
+
+    h_points_i[0, :] = h_points_i[0, :] / h_points_i[2, :]
+    h_points_i[1, :] = h_points_i[1, :] / h_points_i[2, :]
+
+    points_i = h_points_i[:2, :]
+
+    return points_i
