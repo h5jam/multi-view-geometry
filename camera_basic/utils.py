@@ -138,3 +138,80 @@ def compute_image_projection(points, K):
     points_i = h_points_i[:2, :]
 
     return points_i
+
+
+def generate_random_points(n_points, xlim, ylim, zlim):
+    X = np.random.randint(xlim[0], xlim[1], size=n_points)
+    Y = np.random.randint(ylim[0], ylim[1], size=n_points)
+    Z = np.random.randint(zlim[0], zlim[1], size=n_points)
+    
+    return np.vstack((X, Y, Z))
+
+
+def compute_coordinates_wrt_camera(world_points, E, is_homogeneous=False):
+    if not is_homogeneous:
+        points_h = np.vstack((world_points, np.ones(world_points.shape[1])))
+    
+    points_c = E @ points_h
+    return points_c
+
+
+def create_algebraic_mat(world_points, projections):
+    assert world_points.shape[1] == projections.shape[1]
+    n_points = world_points.shape[1]
+    A = np.ones(shape=(2*n_points, 12))
+
+    c = 0
+
+    for i in range(n_points):
+        w = world_points[:, i]
+        p = projections[:, i]
+
+        X, Y, Z = w
+        u, v = p
+
+        row = np.zeros(shape=(2, 12))
+        row[0, 0], row[0, 1], row[0, 2], row[0, 3] = X, Y, Z, 1
+        row[0, 8], row[0, 9], row[0, 10], row[0, 11] = -u*X, -u*Y, -u*Z, -u
+
+        row[1, 4], row[1, 5], row[1, 6], row[1, 7] = X, Y, Z, 1
+        row[1, 8], row[1, 9], row[1, 10], row[1, 11] = -v*X, -v*Y, -v*Z, -v
+
+        A[c:c+2, :]= row
+        c += 2
+    
+    return A
+
+
+def compute_w2i_projection(world_points, M, is_homogeneous=False):
+    if not is_homogeneous:
+        points_h = np.vstack((world_points, np.ones(world_points.shape[1])))
+    
+    h_points_i = M @ points_h
+
+    h_points_i[0, :] = h_points_i[0, :] / h_points_i[2, :]
+    h_points_i[1, :] = h_points_i[1, :] / h_points_i[2, :]
+
+    points_i = h_points_i[:2, :]
+
+    return points_i
+
+
+def geometric_error(m, world_points, projections):
+    assert world_points.shape[1] == projections.shape[1]
+    error = 0
+    n_points = world_points.shape[1]
+
+    for i in range(n_points):
+        X, Y, Z = world_points[:, i]
+        u, v = projections[:, i]
+
+        u_ = m[0]*X + m[1]*Y + m[2]*Z + m[3]
+        v_ = m[4]*X + m[5]*Y + m[6]*Z + m[7]
+        d = m[8]*X + m[9]*Y + m[10]*Z + m[11]
+        u_ = u_/d
+        v_ = v_/d
+
+        error += np.sqrt(np.square(u - u_) + np.square(v - v_))
+    
+    return error
