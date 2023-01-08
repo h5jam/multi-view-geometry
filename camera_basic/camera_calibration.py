@@ -5,8 +5,6 @@ import pytransform3d.rotations as pr
 from utils import *
 
 
-make_line = lambda u, v: np.vstack((u, v)).T
-
 np.random.seed(2)
 
 # define params

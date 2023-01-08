@@ -2,6 +2,8 @@ import numpy as np
 # from pytransform3d.plot_utils import plot_vector
 
 
+make_line = lambda u, v: np.vstack((u, v)).T
+
 def get_rot_x(angle):
     Rx = np.zeros(shape=(3, 3))
     Rx[0, 0] = 1

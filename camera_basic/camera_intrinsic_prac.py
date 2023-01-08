@@ -13,8 +13,6 @@ origin = np.array([0, 0, 0])
 img_size = (7, 7)
 f = 2 # focal length
 
-make_line = lambda u, v: np.vstack((u, v)).T
-
 points = create_same_plane_points(n_points, xlim, ylim, elevation)
 xx, yy, Z = create_image_grid(f, img_size)
 
