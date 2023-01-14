@@ -55,7 +55,7 @@ def compute_fundamental_matrix(points1, points2):
 
     return F
 
-def compute_fundamental_matrix(points1, points2):
+def compute_nomrd_fundamental_matrix(points1, points2):
     assert points1.shape[0] == points2.shape[0]  # check the number of points for correspondences
 
     c1 = np.mean(points1, axis=0)

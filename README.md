@@ -7,5 +7,5 @@
 
 
 ## Acknowledgements
-
+- https://web.stanford.edu/class/cs231a/
 - https://ms-neerajkrishna.medium.com/
