@@ -90,3 +90,49 @@ def compute_epipole(F):
     e = V[-1, :]
     e = e / e[2]
     return e
+
+def compute_matching_homographies(e2, F, im2, points1, points2):
+    '''
+    find a homography to move an epipole to infinity
+    '''
+    h, w = im2.shape
+    T = np.array([[1, 0, -w/2], [0, 1, -h/2], [0, 0, 1]])
+
+    e2_p = T @ e2
+    e2_p = e2_p / e2_p[2]
+    e2x = e2_p[0]
+    e2y = e2_p[1]
+
+    if e2x >= 0:
+        a = 1
+    else:
+        a = -1
+    
+    R_cos = a * e2x / np.sqrt(e2x ** 2 + e2y**2)
+    R_sin = a * e2y / np.sqrt(e2x**2 + e2y**2)
+
+    R = np.array([[R_cos, R_sin, 0], [-R_sin, R_cos, 0], [0, 0, 1]])
+    e2_p = R @ e2_p
+    x = e2_p[0]
+
+    G = np.array([[1, 0, 0], [0, 1, 0], [-1/x, 0, 1]])
+
+    # homography matrix
+    H2 = np.linalg.inv(T) @ G @ R @ T
+
+    e_x = np.array([[0, -e2[2], e2[1]], [e2[2], 0, -e2[2]], [-e2[1], e2[0], 0]])
+    M = e_x @ F + e2.reshape(3, 1) @ np.array([[1, 1, 1]])
+
+    points1_t = H2 @ M @ points1.T
+    points2_t = H2 @ points2.T
+    points1_t /= points1_t[2,:]
+    points2_t /= points2_t[2,:]
+    
+    b = points2_t[0, :]
+    a = np.linalg.lstsq(points1_t, b, rcond=None)[0]
+    H_A = np.array([a, [0, 1, 0], [0, 0, 1]])
+    H1 = H_A @ H2 @ M
+    return H1, H2
+
+def compute_matching_points(im1, im2):
+    pass
