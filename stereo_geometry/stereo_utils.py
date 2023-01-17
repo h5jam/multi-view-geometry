@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 
 
 def to_hg_coords(points):
@@ -108,7 +109,7 @@ def compute_matching_homographies(e2, F, im2, points1, points2):
     else:
         a = -1
     
-    R_cos = a * e2x / np.sqrt(e2x ** 2 + e2y**2)
+    R_cos = a * e2x / np.sqrt(e2x**2 + e2y**2)
     R_sin = a * e2y / np.sqrt(e2x**2 + e2y**2)
 
     R = np.array([[R_cos, R_sin, 0], [-R_sin, R_cos, 0], [0, 0, 1]])
@@ -120,7 +121,7 @@ def compute_matching_homographies(e2, F, im2, points1, points2):
     # homography matrix
     H2 = np.linalg.inv(T) @ G @ R @ T
 
-    e_x = np.array([[0, -e2[2], e2[1]], [e2[2], 0, -e2[2]], [-e2[1], e2[0], 0]])
+    e_x = np.array([[0, -e2[2], e2[1]], [e2[2], 0, -e2[0]], [-e2[1], e2[0], 0]])
     M = e_x @ F + e2.reshape(3, 1) @ np.array([[1, 1, 1]])
 
     points1_t = H2 @ M @ points1.T
@@ -129,10 +130,43 @@ def compute_matching_homographies(e2, F, im2, points1, points2):
     points2_t /= points2_t[2,:]
     
     b = points2_t[0, :]
-    a = np.linalg.lstsq(points1_t, b, rcond=None)[0]
+    a = np.linalg.lstsq(points1_t.T, b, rcond=None)[0]
     H_A = np.array([a, [0, 1, 0], [0, 0, 1]])
     H1 = H_A @ H2 @ M
     return H1, H2
 
+def coord2homo(points):
+    num = points.shape[0]
+    homo_coords = np.ones((num, 3))
+
+    homo_coords[:, :2] = points
+
+    return homo_coords
+
 def compute_matching_points(im1, im2):
-    pass
+    sift = cv2.xfeatures2d.SIFT_create()
+
+    kp1, des1 = sift.detectAndCompute(im1, None)
+    kp2, des2 = sift.detectAndCompute(im2, None)
+    
+    matcher = cv2.BFMatcher(cv2.NORM_L1, crossCheck=True)
+    matches = matcher.match(des1, des2)
+
+    matches = sorted(matches, key = lambda x:x.distance)
+
+    selected = matches[:100]
+    pts1 = []
+    pts2 = []
+
+    for m in selected:
+        pts1.append(kp1[m.queryIdx].pt)
+        pts2.append(kp2[m.trainIdx].pt)
+
+    # visualize
+    # res = cv2.drawMatches(im1, kp1, im2, kp2, selected, None, \
+    #                     flags=cv2.DRAW_MATCHES_FLAGS_NOT_DRAW_SINGLE_POINTS)
+    # cv2.imshow('BFMatcher + SIFT', res)
+    # cv2.waitKey()
+    # cv2.destroyAllWindows()
+
+    return np.array(pts1), np.array(pts2)
